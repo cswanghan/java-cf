@@ -37,17 +37,21 @@ public class NeighborOptimizerThread implements Runnable {
           run = false;
           // add neighbor
           Set<Integer> upd = cloneSet(container.getNBS(baseUserID).getBestIndices());
+          //print(baseUserID + " begining: " + upd);
           for (int i = 0; i < kpr; i++) {
             if (upd.contains(i)) {
               continue;
             }
             upd.add(i);
+            //print(baseUserID + " i added: " + upd);
             if (container.update(baseUserID, upd)) {
               run = true;
             } else {
-              upd.remove(i);
+              //print("remove i="+i);
+              upd.remove(new Integer(i));
             }
           }
+          //print(baseUserID + " after add: " + upd);
           
           // remove neighbor
           for (int i = 0; i < kpr; i++) {
@@ -60,10 +64,11 @@ public class NeighborOptimizerThread implements Runnable {
               }
             }
           }
+          //print(baseUserID + " " + upd);
           
         }
         
-        print(baseUserID + " finished");
+        //print(baseUserID + " finished");
       }
     } catch (Exception e) {
       e.printStackTrace();

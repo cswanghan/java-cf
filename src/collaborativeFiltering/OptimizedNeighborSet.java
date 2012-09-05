@@ -69,9 +69,13 @@ public class OptimizedNeighborSet {
     // evaluate the received index set
     double currentError = evaluate(indices);
     
+    //System.err.println(indices + "\t" + currentError + "\t" + bestError);
+    
     // if the current index set is better than the previously found one, then update it
     if (currentError < bestError) {
+      //System.err.println("c < b => return true == hold");
       bestIndices = indices;
+      bestError = currentError;
       return true;
     }
     return false;

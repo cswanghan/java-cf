@@ -75,7 +75,7 @@ public class OptimizedLearner {
       // write model
       PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(new File(args[1]))));
       for (int i = 0; i < neighbors.size(); i ++) {
-        out.println(i + "\t" + neighbors.get(i));
+        out.println(i + "\t" + asString(neighbors.get(i)));
       }
       out.close();
       

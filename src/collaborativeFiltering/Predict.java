@@ -10,7 +10,7 @@ import java.util.Vector;
 
 public class Predict {
   
-  public static Vector<HashMap<Integer,Double>> readModel(File file, int k) throws IOException {
+  public static Vector<HashMap<Integer,Double>> readModel(File file) throws IOException {
     Vector<HashMap<Integer,Double>> model = new Vector<HashMap<Integer,Double>>(100000);
     
     // open model file
@@ -24,14 +24,14 @@ public class Predict {
       String[] splitedLine = line.split("\\s|,|:");
       
       // check input
-      if (2*k+1 > splitedLine.length) {
+      if (splitedLine.length % 2 != 1) {
         throw new IOException("Bad format of model at line " + l + "!");
       }
       
       // parse (uid,sim) pairs and put it into corresponding rating vector of the model
       HashMap<Integer,Double> rates = new HashMap<Integer,Double>();
       model.add(rates);
-      for (int idx = 1; idx < splitedLine.length - 1 && idx < 2*k; idx += 2) {
+      for (int idx = 1; idx < splitedLine.length - 1; idx += 2) {
         int uid = Integer.parseInt(splitedLine[idx]);
         double sim = Double.parseDouble(splitedLine[idx + 1]);
         rates.put(uid, sim);
@@ -47,15 +47,14 @@ public class Predict {
   }
   
   public static void main(String[] args) throws IOException {
-    if (args.length == 4) {
-      final int k = Integer.parseInt(args[3]);
+    if (args.length == 3) {
       
       // read the training and evaluation databases
       Vector<Map<Integer,Double>> training = Train.readDB(new File(args[0]));
       Vector<Map<Integer,Double>> evaluation = Train.readDB(new File(args[2]));
       
       // read model (in for of baseUserID -> topk(userID, sim))
-      Vector<HashMap<Integer,Double>> model = Predict.readModel(new File(args[1]), k);
+      Vector<HashMap<Integer,Double>> model = Predict.readModel(new File(args[1]));
       
       
       // compute user average ratings
@@ -103,7 +102,7 @@ public class Predict {
         }
       }
     } else {
-      System.err.println("Usage: " + Predict.class.getCanonicalName() + " training model evaluation k");
+      System.err.println("Usage: " + Predict.class.getCanonicalName() + " training model evaluation");
     }
   }
 }
