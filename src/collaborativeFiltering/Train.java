@@ -15,7 +15,7 @@ import java.util.Vector;
 
 public class Train {
 
-  private static SimilarityMatrix computeSimilarities(SimilarityFunction sf, Vector<Map<Integer, Double>> matrix, int numberOfThreads) throws Exception {
+  public static SimilarityMatrix computeSimilarities(SimilarityFunction sf, Vector<Map<Integer, Double>> matrix, int numberOfThreads) throws Exception {
     SimilarityMatrix container = new SimilarityMatrix(matrix.size());
     Thread[] threads = new Thread[numberOfThreads];
     
@@ -44,7 +44,7 @@ public class Train {
     return container;
   }
   
-  private static TopK computeTopK(SimilarityMatrix matrix, int k, int numberOfThreads) throws Exception {
+  public static TopK computeTopK(SimilarityMatrix matrix, int k, int numberOfThreads) throws Exception {
     TopK container = new TopK(matrix.size(), k);
     Thread[] threads = new Thread[numberOfThreads];
     
