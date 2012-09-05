@@ -8,7 +8,7 @@ import java.util.TreeMap;
 import java.util.Vector;
 
 public class OptimizedNeighborSet {
-  private Set<Integer> bestIndices;
+  private Set<Integer> bestIndices = new HashSet<Integer>();
   private double bestError = Double.MAX_VALUE;
   
   private final TopKEntry[] neighbors;
@@ -16,15 +16,36 @@ public class OptimizedNeighborSet {
   private final Vector<Double> avgs;
   private final SimilarityMatrix similarities;
   private final int userID;
+  private final int k;
   
   public OptimizedNeighborSet(int userID, int numberOfUsers, int numberOfNeighbors /*k+r*/, Vector<Map<Integer,Double>> db, SimilarityMatrix s, View<TopKEntry> topk, Random rand) {
-    neighbors = new TopKEntry[numberOfNeighbors];
+    // store some received variable for evaluation
+    this.userID = userID;
+    this.ratings = db;
+    this.similarities = s;
     int i;
+    
+    // compute the avg. preds. for users
+    avgs = new Vector<Double>();
+    for (i = 0; i < ratings.size(); i++) {
+      Map<Integer, Double> row = ratings.get(i);
+      double avg = 0.0;
+      for (int iid : row.keySet()) {
+        avg += row.get(iid);
+      }
+      avgs.add(row.size() == 0.0 ? 0.0 : avg/row.size());
+    }
+    
+    
+    neighbors = new TopKEntry[numberOfNeighbors];
     
     // add the most similar k neighbors from topK
     for (i = 0; i < topk.size(); i ++) {
       neighbors[i] = topk.get(i);
+      bestIndices.add(i);
     }
+    update(bestIndices);
+    k = topk.size();
     
     // add r random neighbor
     int r = numberOfNeighbors - topk.size();
@@ -42,21 +63,6 @@ public class OptimizedNeighborSet {
         i ++;
       }
     }
-    
-    // store some received variable for evaluation
-    this.userID = userID;
-    this.ratings = db;
-    this.similarities = s;
-    
-    // compute the avg. preds. for users
-    avgs = new Vector<Double>();
-    for (Map<Integer, Double> row : ratings) {
-      double avg = 0.0;
-      for (int iid : row.keySet()) {
-        avg += row.get(iid);
-      }
-      avgs.add(avg/row.size());
-    }
   }
   
   public boolean update(Set<Integer> indices) {
@@ -73,33 +79,41 @@ public class OptimizedNeighborSet {
   
   private double error(int uid, Set<Integer> indices) {
     double MAE = 0.0;
+    if (ratings == null) {
+      System.err.println("Ratings is null!!!");
+    }
+    if (ratings.get(uid) == null) {
+      return 0.0;
+    }
     double size = ratings.get(uid).size();
     for (int iid : ratings.get(uid).keySet()) {
       double exp = ratings.get(uid).get(iid);
       double pred = 0.0;
       double sumSim = 0.0;
       for (int index : indices) {
-        if (uid != index) {
-          Double nDRate = ratings.get(index).get(iid);
+        int u = neighbors[index].getUserID();
+        if (uid != u) {
+          Double nDRate = ratings.get(u).get(iid);
           double nRate = nDRate == null ? 0.0 : nDRate;
-          double uAvg = avgs.get(index);
-          double sim = similarities.get(uid, index);
+          double uAvg = avgs.get(u);
+          double sim = similarities.get(uid, u);
           
           pred += sim * (nRate - uAvg);
           sumSim += Math.abs(sim);
         }
       }
-      pred = sumSim == 0.0 ? 0.0 : pred / sumSim;
+      pred = sumSim == 0.0 ? 0.0 : pred / sumSim + avgs.get(uid);
       MAE += Math.abs(exp - pred);
     }
     return size == 0.0 ? 0.0 : MAE / size;
   }
   
   private double evaluate(Set<Integer> indices) {
-    // Compute prediction error for all users including the current user
-    indices.add(userID);
+    // Compute prediction error for topK and current users
     TreeMap<Integer, Double> MAEs = new TreeMap<Integer, Double>();
-    for (int uid : indices) {
+    MAEs.put(userID, error(userID, indices));
+    for (int i = 0; i < k; i++) {
+      int uid = neighbors[i].getUserID();
       double value = error(uid, indices);
       MAEs.put(uid, value);
     }

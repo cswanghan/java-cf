@@ -11,6 +11,9 @@ import java.util.Vector;
 public class OptimizedLearner {
 
   public static OptimizedNeighborSets optimizeNeighbors(Vector<Map<Integer,Double>> ratings, SimilarityMatrix similarities, TopK topk, int k, int r, Random rand, int minSize, int numberOfThreads) throws InterruptedException {
+    if (ratings == null) {
+      System.err.println("Ratings is null in static call");
+    }
     OptimizedNeighborSets container = new OptimizedNeighborSets(ratings.size(), k+r, ratings, similarities, topk, rand);
     Thread[] threads = new Thread[numberOfThreads];
     

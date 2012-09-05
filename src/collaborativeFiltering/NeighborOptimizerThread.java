@@ -62,12 +62,8 @@ public class NeighborOptimizerThread implements Runnable {
           }
           
         }
-        /*
         
-        for (Set<Integer> subSet : subSets) {
-          container.update(baseUserID, subSet);
-          print("compute for user " + baseUserID + " value " + subSet);
-        }*/
+        print(baseUserID + " finished");
       }
     } catch (Exception e) {
       e.printStackTrace();
