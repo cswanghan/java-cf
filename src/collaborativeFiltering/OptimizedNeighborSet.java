@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.Vector;
 
 public class OptimizedNeighborSet {
@@ -13,6 +14,7 @@ public class OptimizedNeighborSet {
   private final TopKEntry[] neighbors;
   
   private final Vector<Map<Integer,Double>> ratings;
+  private final Vector<Double> avgs;
   private final SimilarityMatrix similarities;
   private final int userID;
   
@@ -46,6 +48,16 @@ public class OptimizedNeighborSet {
     this.userID = userID;
     this.ratings = db;
     this.similarities = s;
+    
+    // compute the avg. preds. for users
+    avgs = new Vector<Double>();
+    for (Map<Integer, Double> row : ratings) {
+      double avg = 0.0;
+      for (int iid : row.keySet()) {
+        avg += row.get(iid);
+      }
+      avgs.add(avg/row.size());
+    }
   }
   
   public void update(Set<Integer> indices) {
@@ -58,11 +70,48 @@ public class OptimizedNeighborSet {
     }
   }
   
+  private double error(int uid, Set<Integer> indices) {
+    double MAE = 0.0;
+    double size = ratings.get(uid).size();
+    for (int iid : ratings.get(uid).keySet()) {
+      double exp = ratings.get(uid).get(iid);
+      double pred = 0.0;
+      double sumSim = 0.0;
+      for (int index : indices) {
+        if (uid != index) {
+          Double nDRate = ratings.get(index).get(iid);
+          double nRate = nDRate == null ? 0.0 : nDRate;
+          double uAvg = avgs.get(index);
+          double sim = similarities.get(uid, index);
+          
+          pred += sim * (nRate - uAvg);
+          sumSim += Math.abs(sim);
+        }
+      }
+      pred = sumSim == 0.0 ? 0.0 : pred / sumSim;
+      MAE += Math.abs(exp - pred);
+    }
+    return size == 0.0 ? 0.0 : MAE / size;
+  }
+  
   private double evaluate(Set<Integer> indices) {
-    // TODO: coding
-    // 
+    // Compute prediction error for all users including the current user
+    indices.add(userID);
+    TreeMap<Integer, Double> MAEs = new TreeMap<Integer, Double>();
+    for (int uid : indices) {
+      double value = error(uid, indices);
+      MAEs.put(uid, value);
+    }
     
-    return Double.NaN;
+    // linearly weighting and summing MAEs
+    double ret = 0.0;
+    double sumSim = 0.0;
+    for (int uid : MAEs.keySet()) {
+      ret += similarities.get(uid, userID) * MAEs.get(uid);
+      sumSim += Math.abs(similarities.get(uid, userID));
+    }
+    
+    return sumSim == 0.0 ? 0.0 : ret / sumSim;
   }
   
   public TopKEntry[] getNeighbors() {
