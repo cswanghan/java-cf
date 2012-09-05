@@ -28,6 +28,19 @@ public class SubSets implements Iterable<Set<Integer>>, Iterator<Set<Integer>>{
     return new SubSets(n, min, max);
   }
   
+  private boolean step() {
+    boolean ret = false;
+    int i;
+    for (i = 0; i < n && s.contains(i); i++) {
+      s.pollFirst();
+    }
+    if (i < n) {
+      s.add(i);
+      ret = true;
+    }
+    return ret;
+  }
+  
   @Override
   public boolean hasNext() {
     boolean ret = false;
@@ -35,17 +48,10 @@ public class SubSets implements Iterable<Set<Integer>>, Iterator<Set<Integer>>{
       s = new TreeSet<Integer>();
       ret = true;
     } else {
-      int i;
-      for (i = 0; i < n && s.contains(i); i++) {
-        s.pollFirst();
-      }
-      if (i < n) {
-        s.add(i);
-        ret = true;
-      }
+      ret = step();
     }
-    if (ret && (s.size() < min || s.size() > max)) {
-      ret = hasNext();
+    while (ret && (s.size() < min || s.size() > max)) {
+      ret = step();
     }
     return ret;
   }

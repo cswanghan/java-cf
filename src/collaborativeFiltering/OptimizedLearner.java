@@ -20,10 +20,10 @@ public class OptimizedLearner {
     
     // create threads
     for (int i = 0; i < threads.length - 1; i ++) {
-      threads[i] = new Thread(new NeighborOptimizerThread(from, from + step, container, minSize));
+      threads[i] = new Thread(new NeighborOptimizerThread(from, from + step, container, minSize, k+r));
       from += step;
     }
-    threads[threads.length - 1] = new Thread(new NeighborOptimizerThread(from, size, container, minSize));
+    threads[threads.length - 1] = new Thread(new NeighborOptimizerThread(from, size, container, minSize, k+r));
     
     // start threads
     for (int i = 0; i < threads.length; i++) {
@@ -42,7 +42,7 @@ public class OptimizedLearner {
     for (int i = 0; i < n.length; i++) {
       b.append(n[i].getUserID()).append(':').append(n[i].getSimilarity());
       if (i < n.length - 1) {
-        b.append(',').append(' '); // maybe the final part is not needed
+        b.append(',');
       }
     }
     return b.toString();
