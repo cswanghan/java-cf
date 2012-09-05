@@ -11,7 +11,6 @@ public class OptimizedNeighborSet {
   private double bestError = Double.MAX_VALUE;
   
   private final TopKEntry[] neighbors;
-  
   private final Vector<Map<Integer,Double>> ratings;
   private final SimilarityMatrix similarities;
   private final int userID;
