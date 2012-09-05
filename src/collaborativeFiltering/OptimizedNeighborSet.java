@@ -59,14 +59,16 @@ public class OptimizedNeighborSet {
     }
   }
   
-  public void update(Set<Integer> indices) {
+  public boolean update(Set<Integer> indices) {
     // evaluate the received index set
     double currentError = evaluate(indices);
     
     // if the current index set is better than the previously found one, then update it
     if (currentError < bestError) {
       bestIndices = indices;
+      return true;
     }
+    return false;
   }
   
   private double error(int uid, Set<Integer> indices) {
@@ -131,4 +133,5 @@ public class OptimizedNeighborSet {
     }
     return o;
   }
+  
 }

@@ -15,8 +15,8 @@ public class OptimizedNeighborSets {
     }
   }
   
-  public void update(int i, Set<Integer> indices) {
-    neighbors[i].update(indices);
+  public boolean update(int i, Set<Integer> indices) {
+    return neighbors[i].update(indices);
   }
   
   public TopKEntry[] get(int i) {
@@ -25,6 +25,10 @@ public class OptimizedNeighborSets {
   
   public int size() {
     return neighbors.length;
+  }
+  
+  public OptimizedNeighborSet getNBS(int i) {
+    return neighbors[i];
   }
 
 }
