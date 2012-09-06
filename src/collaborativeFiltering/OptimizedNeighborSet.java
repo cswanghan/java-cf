@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
 
@@ -58,12 +57,63 @@ public class OptimizedNeighborSet {
     }
   }
   
+  private Set<Integer> bestNbrIndices = new TreeSet<Integer>();
+  
+  public void upd() {
+    bestNbrIndices.clear();
+    for (int i = 0; i < topk.size(); i++) {
+      bestNbrIndices.add(i);
+    }
+    
+    boolean run = true;
+    while(run) {
+      run = false;
+      // add neighbor
+      //print(baseUserID + " begining: " + upd);
+      for (int i = 0; i < topk.size() + topr.size(); i++) {
+        if (bestNbrIndices.contains(i)) {
+          continue;
+        }
+        bestNbrIndices.add(i);
+        double err = error(bestNbrIndices);
+        //print(baseUserID + " i added: " + upd);
+        if (err < bestError) {
+          bestError = err;
+          run = true;
+        } else {
+          //print("remove i="+i);
+          bestNbrIndices.remove(i);
+        }
+      }
+      //print(baseUserID + " after add: " + upd);
+      
+      // remove neighbor
+      for (int i = 0; i < topk.size() + topr.size(); i++) {
+        if (bestNbrIndices.contains(i)) {
+          bestNbrIndices.remove(i);
+          double err = error(bestNbrIndices);
+          if (err < bestError) {
+            bestError = err;
+            run = true;
+          } else {
+            bestNbrIndices.add(i);
+          }
+        }
+      }
+    }
+  }
+  
   public void update() {
     for (int currN = 0; currN < topk.size(); currN ++) {
       double e = error(currN);
       if (e < bestError) {
         bestError = e;
         n = currN;
+        bestNbrIndices.clear();
+        for (int i = 0; i < topk.size(); i++) {
+          int index = (i < topk.size() - n) ? i : i + n;
+          bestNbrIndices.add(index);
+        }
       }
     }
   }
@@ -74,13 +124,7 @@ public class OptimizedNeighborSet {
     return set;
   }
   
-  /**
-   * Computes the absolute error for the current user based on its neighbors and the 
-   * specified cut point.
-   * @param currN the cut point
-   * @return absolute error
-   */
-  private double error(int currN) {
+  private double error(Set<Integer> nIndices) {
     double err = 0.0;
     double c = 0.0;
     
@@ -90,8 +134,8 @@ public class OptimizedNeighborSet {
         double pred = 0.0;
         double sumSim = 0.0;
         
-        for (int i = 0; i < topk.size(); i++) {
-          int nuid = (i < topk.size() - currN) ? topk.get(i).getUserID() : topr.get(i + currN - topk.size()).getUserID();
+        for (int index : nIndices) {
+          int nuid = (index < topk.size()) ? topk.get(index).getUserID() : topr.get(index - topk.size()).getUserID();
           Double nDRate = ratings.get(nuid).get(itemID);
           double nRate = nDRate == null ? 0.0 : nDRate;
           double uAvg = avgs.get(nuid);
@@ -110,8 +154,30 @@ public class OptimizedNeighborSet {
     return err / c;
   }
   
+  /**
+   * Computes the absolute error for the current user based on its neighbors and the 
+   * specified cut point.
+   * @param currN the cut point
+   * @return absolute error
+   */
+  private double error(int currN) {
+    Set<Integer> nIndices = new TreeSet<Integer>();
+    for (int i = 0; i < topk.size(); i++) {
+      int index = (i < topk.size() - currN) ? i : currN + i;
+      nIndices.add(index);
+    }
+    
+    return error(nIndices);
+  }
+  
   public TopKEntry[] getFinalEntries() {
     TopKEntry[] model = new TopKEntry[topk.size()];
+    int c = 0;
+    for (int i : bestNbrIndices) {
+      model[c] = (i < topk.size()) ? topk.get(i) : topr.get(i - topk.size());
+      c++;
+    }
+    /*
     // get part from topk
     for (int i = 0; i < topk.size() - n; i++) {
       model[i] = topk.get(i);
@@ -119,7 +185,7 @@ public class OptimizedNeighborSet {
     // get part from topr
     for (int i = 0; i < n; i++) {
       model[i + topk.size() - n] = topr.get(i);
-    }
+    }*/
     return model;
   }
   
