@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
 
@@ -26,6 +25,9 @@ public class OptimizedNeighborSet {
     this.userID = userID;
     this.ratings = db;
     this.similarities = s;
+    final int r = numberOfNeighbors - topk.size();
+    this.topk = topk;
+    this.topr = new View<TopKEntry>(r);
     
     // compute the avg. preds. for users
     avgs = new Vector<Double>();
@@ -37,10 +39,6 @@ public class OptimizedNeighborSet {
       }
       avgs.add(row.size() == 0.0 ? 0.0 : avg/row.size());
     }
-    
-    int r = numberOfNeighbors - topk.size();
-    this.topk = topk;
-    this.topr = new View<TopKEntry>(r);
     
     // add r random neighbor
     Set<Integer> randomNeighborSet = new HashSet<Integer>(r);
@@ -71,6 +69,10 @@ public class OptimizedNeighborSet {
   private Set<Integer> getEvalSet() {
     Set<Integer> set = new TreeSet<Integer>();
     set.add(userID);
+    int topkCounter = 10;
+    for (int i = 0; i < topk.size() && i < topkCounter; i++) {
+      set.add(topk.get(i).getUserID());
+    }
     return set;
   }
   
