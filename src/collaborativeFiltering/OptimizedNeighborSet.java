@@ -11,23 +11,24 @@ public class OptimizedNeighborSet {
   private Set<Integer> bestIndices = new HashSet<Integer>();
   private double bestError = Double.MAX_VALUE;
   
-  private final TopKEntry[] neighbors;
+  private final View<TopKEntry> topk;
+  private final View<TopKEntry> topr;
+  
   private final Vector<Map<Integer,Double>> ratings;
-  private final Vector<Double> avgs;
   private final SimilarityMatrix similarities;
   private final int userID;
-  private final int k;
+  
+  private final Vector<Double> avgs;
   
   public OptimizedNeighborSet(int userID, int numberOfUsers, int numberOfNeighbors /*k+r*/, Vector<Map<Integer,Double>> db, SimilarityMatrix s, View<TopKEntry> topk, Random rand) {
     // store some received variable for evaluation
     this.userID = userID;
     this.ratings = db;
     this.similarities = s;
-    int i;
     
     // compute the avg. preds. for users
     avgs = new Vector<Double>();
-    for (i = 0; i < ratings.size(); i++) {
+    for (int i = 0; i < ratings.size(); i++) {
       Map<Integer, Double> row = ratings.get(i);
       double avg = 0.0;
       for (int iid : row.keySet()) {
@@ -36,21 +37,13 @@ public class OptimizedNeighborSet {
       avgs.add(row.size() == 0.0 ? 0.0 : avg/row.size());
     }
     
-    
-    neighbors = new TopKEntry[numberOfNeighbors];
-    
-    // add the most similar k neighbors from topK
-    for (i = 0; i < topk.size(); i ++) {
-      neighbors[i] = topk.get(i);
-      bestIndices.add(i);
-    }
-    update(bestIndices);
-    k = topk.size();
+    int r = numberOfNeighbors - topk.size();
+    this.topk = topk;
+    this.topr = new View<TopKEntry>(r);
     
     // add r random neighbor
-    int r = numberOfNeighbors - topk.size();
     Set<Integer> randomNeighborSet = new HashSet<Integer>(r);
-    while (i < numberOfNeighbors && randomNeighborSet.size() < r) {
+    while (randomNeighborSet.size() < r) {
       
       // draw a uniform random neighbor
       int id = rand.nextInt(numberOfNeighbors);
@@ -59,26 +52,12 @@ public class OptimizedNeighborSet {
       if (!randomNeighborSet.contains(id)) {
         // new random neighbor => add to set and neighbors, increment i
         randomNeighborSet.add(id);
-        neighbors[i] = new TopKEntry(id, s.get(userID, id));
-        i ++;
+        topr.insert(new TopKEntry(id, similarities.get(userID, id)));
       }
     }
   }
   
-  public boolean update(Set<Integer> indices) {
-    // evaluate the received index set
-    double currentError = evaluate(indices);
-    
-    //System.err.println(indices + "\t" + currentError + "\t" + bestError);
-    
-    // if the current index set is better than the previously found one, then update it
-    if (currentError < bestError) {
-      //System.err.println("c < b => return true == hold");
-      bestIndices = indices;
-      bestError = currentError;
-      return true;
-    }
-    return false;
+  public void update() {
   }
   
   private double error(int uid, Set<Integer> indices) {
@@ -143,7 +122,7 @@ public class OptimizedNeighborSet {
     return bestIndices;
   }
   
-  public TopKEntry[] getBestNeighbors() {
+  public TopKEntry[] getFinal() {
     TopKEntry[] o = new TopKEntry[bestIndices.size()];
     int c = 0;
     for (int idx : bestIndices) {
