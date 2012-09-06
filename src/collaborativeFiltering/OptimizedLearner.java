@@ -23,10 +23,10 @@ public class OptimizedLearner {
     
     // create threads
     for (int i = 0; i < threads.length - 1; i ++) {
-      threads[i] = new Thread(new NeighborOptimizerThread(from, from + step, container, minSize, k+r));
+      threads[i] = new Thread(new NeighborOptimizerThread(from, from + step, container));
       from += step;
     }
-    threads[threads.length - 1] = new Thread(new NeighborOptimizerThread(from, size, container, minSize, k+r));
+    threads[threads.length - 1] = new Thread(new NeighborOptimizerThread(from, size, container));
     
     // start threads
     for (int i = 0; i < threads.length; i++) {

@@ -9,15 +9,15 @@ import java.util.TreeSet;
 import java.util.Vector;
 
 public class OptimizedNeighborSet {
-  private Set<Integer> bestIndices = new HashSet<Integer>();
-  private double bestError = Double.MAX_VALUE;
-  
   private final View<TopKEntry> topk;
   private final View<TopKEntry> topr;
   
   private final Vector<Map<Integer,Double>> ratings;
   private final SimilarityMatrix similarities;
   private final int userID;
+  
+  private double bestError = Double.MAX_VALUE;
+  private int n;
   
   private final Vector<Double> avgs;
   
@@ -59,6 +59,13 @@ public class OptimizedNeighborSet {
   }
   
   public void update() {
+    for (int currN = 0; currN < topk.size(); currN ++) {
+      double e = error(currN);
+      if (e < bestError) {
+        bestError = e;
+        n = currN;
+      }
+    }
   }
   
   private Set<Integer> getEvalSet() {
@@ -103,23 +110,17 @@ public class OptimizedNeighborSet {
     return err / c;
   }
   
-  public TopKEntry[] getNeighbors() {
-    // simply returns the neighbor set
-    return neighbors;
-  }
-  
-  public Set<Integer> getBestIndices() {
-    // returns the best indices
-    return bestIndices;
-  }
-  
-  public TopKEntry[] getFinal() {
-    TopKEntry[] o = new TopKEntry[bestIndices.size()];
-    int c = 0;
-    for (int idx : bestIndices) {
-      o[c ++] = neighbors[idx];
+  public TopKEntry[] getFinalEntries() {
+    TopKEntry[] model = new TopKEntry[topk.size()];
+    // get part from topk
+    for (int i = 0; i < topk.size() - n; i++) {
+      model[i] = topk.get(i);
     }
-    return o;
+    // get part from topr
+    for (int i = 0; i < n; i++) {
+      model[i + topk.size() - n] = topr.get(i);
+    }
+    return model;
   }
   
 }

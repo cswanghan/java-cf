@@ -2,7 +2,6 @@ package collaborativeFiltering;
 
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.Vector;
 
 public class OptimizedNeighborSets {
@@ -15,12 +14,12 @@ public class OptimizedNeighborSets {
     }
   }
   
-  public boolean update(int i, Set<Integer> indices) {
-    return neighbors[i].update(indices);
+  public void update(int i) {
+    neighbors[i].update();
   }
   
   public TopKEntry[] get(int i) {
-    return neighbors[i].getBestNeighbors();
+    return neighbors[i].getFinalEntries();
   }
   
   public int size() {
