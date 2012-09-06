@@ -10,13 +10,14 @@ import java.util.Vector;
 public class OptimizedNeighborSet {
   private final View<TopKEntry> topk;
   private final View<TopKEntry> topr;
+  private final Set<Integer> randomNeighborSet;
   
   private final Vector<Map<Integer,Double>> ratings;
   private final SimilarityMatrix similarities;
   private final int userID;
   
   private double bestError = Double.MAX_VALUE;
-  private int n;
+  private final int n;
   
   private final Vector<Double> avgs;
   
@@ -27,7 +28,8 @@ public class OptimizedNeighborSet {
     this.similarities = s;
     final int r = numberOfNeighbors - topk.size();
     this.topk = topk;
-    this.topr = new View<TopKEntry>(r);
+    this.n = topk.size() / 2;
+    this.topr = new View<TopKEntry>(n);
     
     // compute the avg. preds. for users
     avgs = new Vector<Double>();
@@ -41,7 +43,7 @@ public class OptimizedNeighborSet {
     }
     
     // add r random neighbor
-    Set<Integer> randomNeighborSet = new HashSet<Integer>(r);
+    randomNeighborSet = new HashSet<Integer>(r);
     while (randomNeighborSet.size() < r) {
       
       // draw a uniform random neighbor
@@ -51,7 +53,6 @@ public class OptimizedNeighborSet {
       if (!randomNeighborSet.contains(id)) {
         // new random neighbor => add to set and neighbors, increment i
         randomNeighborSet.add(id);
-        topr.insert(new TopKEntry(id, similarities.get(userID, id)));
       }
     }
   }
@@ -103,15 +104,22 @@ public class OptimizedNeighborSet {
   }
   
   public void update() {
-    for (int currN = 0; currN < topk.size(); currN ++) {
-      double e = error(currN);
-      if (e < bestError) {
-        bestError = e;
-        n = currN;
-        bestNbrIndices.clear();
-        for (int i = 0; i < topk.size(); i++) {
-          int index = (i < topk.size() - n) ? i : i + n;
-          bestNbrIndices.add(index);
+    int counter = 0;
+    for (int id : randomNeighborSet) {
+      topr.insert(new TopKEntry(id, similarities.get(userID, id)));
+      counter++;
+      if (counter > n) {
+      //for (int currN = 0; currN < topk.size(); currN ++) {
+        //double e = error(currN);
+        double e = error(n);
+        if (e < bestError) {
+          bestError = e;
+          //n = currN;
+          bestNbrIndices.clear();
+          for (int i = 0; i < topk.size(); i++) {
+            int index = (i < topk.size() - n) ? i : i + n;
+            bestNbrIndices.add(index);
+          }
         }
       }
     }
@@ -120,10 +128,12 @@ public class OptimizedNeighborSet {
   private Set<Integer> getEvalSet() {
     Set<Integer> set = new TreeSet<Integer>();
     set.add(userID);
+    /*
     int topkCounter = 10;
     for (int i = 0; i < topk.size() && i < topkCounter; i++) {
       set.add(topk.get(i).getUserID());
     }
+    */
     return set;
   }
   
@@ -180,15 +190,6 @@ public class OptimizedNeighborSet {
       model[c] = (i < topk.size()) ? topk.get(i) : topr.get(i - topk.size());
       c++;
     }
-    /*
-    // get part from topk
-    for (int i = 0; i < topk.size() - n; i++) {
-      model[i] = topk.get(i);
-    }
-    // get part from topr
-    for (int i = 0; i < n; i++) {
-      model[i + topk.size() - n] = topr.get(i);
-    }*/
     return model;
   }
   
