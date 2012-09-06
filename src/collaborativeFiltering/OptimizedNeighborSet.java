@@ -174,7 +174,7 @@ public class OptimizedNeighborSet {
   }
   
   public TopKEntry[] getFinalEntries() {
-    TopKEntry[] model = new TopKEntry[topk.size()];
+    TopKEntry[] model = new TopKEntry[bestNbrIndices.size()];
     int c = 0;
     for (int i : bestNbrIndices) {
       model[c] = (i < topk.size()) ? topk.get(i) : topr.get(i - topk.size());
