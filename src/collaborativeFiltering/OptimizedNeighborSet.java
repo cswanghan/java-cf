@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.Vector;
 
 public class OptimizedNeighborSet {
@@ -60,56 +61,46 @@ public class OptimizedNeighborSet {
   public void update() {
   }
   
-  private double error(int uid, Set<Integer> indices) {
-    double MAE = 0.0;
-    if (ratings == null) {
-      System.err.println("Ratings is null!!!");
-    }
-    if (ratings.get(uid) == null) {
-      return 0.0;
-    }
-    double size = ratings.get(uid).size();
-    for (int iid : ratings.get(uid).keySet()) {
-      double exp = ratings.get(uid).get(iid);
-      double pred = 0.0;
-      double sumSim = 0.0;
-      for (int index : indices) {
-        int u = neighbors[index].getUserID();
-        if (uid != u) {
-          Double nDRate = ratings.get(u).get(iid);
+  private Set<Integer> getEvalSet() {
+    Set<Integer> set = new TreeSet<Integer>();
+    set.add(userID);
+    return set;
+  }
+  
+  /**
+   * Computes the absolute error for the current user based on its neighbors and the 
+   * specified cut point.
+   * @param currN the cut point
+   * @return absolute error
+   */
+  private double error(int currN) {
+    double err = 0.0;
+    double c = 0.0;
+    
+    for (int uid : getEvalSet()) {
+      for (int itemID : ratings.get(uid).keySet()) {
+        double exp = ratings.get(uid).get(itemID);
+        double pred = 0.0;
+        double sumSim = 0.0;
+        
+        for (int i = 0; i < topk.size(); i++) {
+          int nuid = (i < topk.size() - currN) ? topk.get(i).getUserID() : topr.get(i + currN - topk.size()).getUserID();
+          Double nDRate = ratings.get(nuid).get(itemID);
           double nRate = nDRate == null ? 0.0 : nDRate;
-          double uAvg = avgs.get(u);
-          double sim = similarities.get(uid, u);
+          double uAvg = avgs.get(nuid);
+          double sim = similarities.get(uid, nuid);
           
           pred += sim * (nRate - uAvg);
           sumSim += Math.abs(sim);
         }
+        
+        pred = sumSim == 0.0 ? 0.0 : pred / sumSim + avgs.get(uid);
+        c++;
+        err += Math.abs(exp - pred);
       }
-      pred = sumSim == 0.0 ? 0.0 : pred / sumSim + avgs.get(uid);
-      MAE += Math.abs(exp - pred);
-    }
-    return size == 0.0 ? 0.0 : MAE / size;
-  }
-  
-  private double evaluate(Set<Integer> indices) {
-    // Compute prediction error for topK and current users
-    TreeMap<Integer, Double> MAEs = new TreeMap<Integer, Double>();
-    MAEs.put(userID, error(userID, indices));
-    for (int i = 0; i < k; i++) {
-      int uid = neighbors[i].getUserID();
-      double value = error(uid, indices);
-      MAEs.put(uid, value);
     }
     
-    // linearly weighting and summing MAEs
-    double ret = 0.0;
-    double sumSim = 0.0;
-    for (int uid : MAEs.keySet()) {
-      ret += similarities.get(uid, userID) * MAEs.get(uid);
-      sumSim += Math.abs(similarities.get(uid, userID));
-    }
-    
-    return sumSim == 0.0 ? 0.0 : ret / sumSim;
+    return err / c;
   }
   
   public TopKEntry[] getNeighbors() {
