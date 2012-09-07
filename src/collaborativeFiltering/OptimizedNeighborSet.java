@@ -1,6 +1,5 @@
 package collaborativeFiltering;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -10,7 +9,7 @@ import java.util.Vector;
 public class OptimizedNeighborSet {
   private final View<TopKEntry> topk;
   private final View<TopKEntry> topr;
-  private final Set<Integer> randomNeighborSet;
+  //private final Set<Integer> randomNeighborSet;
   
   private final Vector<Map<Integer,Double>> ratings;
   private final SimilarityMatrix similarities;
@@ -18,6 +17,8 @@ public class OptimizedNeighborSet {
   
   private double bestError = Double.MAX_VALUE;
   private final int n;
+  private final int r;
+  private final Random rand;
   
   private final Vector<Double> avgs;
   
@@ -26,7 +27,8 @@ public class OptimizedNeighborSet {
     this.userID = userID;
     this.ratings = db;
     this.similarities = s;
-    final int r = numberOfNeighbors - topk.size();
+    r = numberOfNeighbors - topk.size();
+    this.rand = rand;
     this.topk = topk;
     this.n = topk.size() / 2;
     this.topr = new View<TopKEntry>(n);
@@ -43,7 +45,7 @@ public class OptimizedNeighborSet {
     }
     
     // add r random neighbor
-    randomNeighborSet = new HashSet<Integer>(r);
+    /*randomNeighborSet = new HashSet<Integer>(r);
     while (randomNeighborSet.size() < r) {
       
       // draw a uniform random neighbor
@@ -54,7 +56,7 @@ public class OptimizedNeighborSet {
         // new random neighbor => add to set and neighbors, increment i
         randomNeighborSet.add(id);
       }
-    }
+    }*/
   }
   
   private Set<Integer> bestNbrIndices = new TreeSet<Integer>();
@@ -105,9 +107,14 @@ public class OptimizedNeighborSet {
   
   public void update() {
     int counter = 0;
-    for (int id : randomNeighborSet) {
-      topr.insert(new TopKEntry(id, similarities.get(userID, id)));
-      counter++;
+    //for (int id : randomNeighborSet) {
+    for (int iter = 0; iter < r; iter++) {
+      int id = rand.nextInt(similarities.size());
+      TopKEntry entry = new TopKEntry(id, similarities.get(userID, id));
+      if (!topr.contains(entry)) {
+        topr.insert(entry);
+        counter++;
+      }
       if (counter > n) {
       //for (int currN = 0; currN < topk.size(); currN ++) {
         //double e = error(currN);

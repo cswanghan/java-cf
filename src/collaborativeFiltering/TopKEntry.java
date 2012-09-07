@@ -32,4 +32,11 @@ public class TopKEntry implements Serializable, Comparable<TopKEntry> {
     }
     return 0;
   }
+  
+  public boolean equals(Object o) {
+    if (o instanceof TopKEntry && ((TopKEntry)o).userID == userID) {
+      return true;
+    }
+    return false;
+  }
 }
