@@ -59,25 +59,31 @@ public class OptimizedLearner {
       final Random rand = new Random(seed);
       final int numberOfThreads = Integer.parseInt(args[5]);
       
+      System.err.print("Reading database...\t");
       // read the database
       Vector<Map<Integer,Double>> db = Train.readDB(new File(args[0]));
       
+      System.err.print("OK\nComputing similarities...\t");
       // compute similarities
       SimilarityMatrix similarities = Train.computeSimilarities(new CosineSimilarity(), db, numberOfThreads);
       
+      System.err.print("OK\nComputing topK neighbors...\t");
       // compute top K similar nodes in O(k^2*n)
       TopK topk = Train.computeTopK(similarities, k, numberOfThreads);
       
+      System.err.println("OK\nOptimizing neghbor sets...");
       // optimize neighbor set
       int minSize = k;
       OptimizedNeighborSets neighbors = OptimizedLearner.optimizeNeighbors(db, similarities, topk, k, r, rand, minSize, numberOfThreads);
       
+      System.err.print("Writing the output to file...\t");
       // write model
       PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(new File(args[1]))));
       for (int i = 0; i < neighbors.size(); i ++) {
         out.println(i + "\t" + asString(neighbors.get(i)));
       }
       out.close();
+      System.err.println("OK");
       
     } else {
       System.err.println("Usage: " + Train.class.getCanonicalName() + " training model k r seed threads");

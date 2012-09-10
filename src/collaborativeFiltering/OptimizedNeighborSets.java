@@ -29,5 +29,9 @@ public class OptimizedNeighborSets {
   public OptimizedNeighborSet getNBS(int i) {
     return neighbors[i];
   }
+  
+  public synchronized void printStatus(String str) {
+    System.err.println("\t" + str);
+  }
 
 }

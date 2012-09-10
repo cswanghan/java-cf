@@ -17,7 +17,9 @@ public class NeighborOptimizerThread implements Runnable {
     try {
       for (int baseUserID = from; baseUserID < until; baseUserID ++) {
         container.update(baseUserID);
+        container.printStatus(Thread.currentThread().getName() + " - Ready with the job of user: " + baseUserID);
       }
+      container.printStatus(Thread.currentThread().getName() + " is ready!!!");
     } catch (Exception e) {
       e.printStackTrace();
     }
